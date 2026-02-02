@@ -11,7 +11,26 @@ vim.keymap.set("n", "<leader>pv", vim.cmd.NvimTreeOpen)
 -------------------------
 -- Invoke osc52 when using vim yank
 -------------------------
-vim.cmd([[ autocmd TextYankPost * lua require('osc52').copy_visual() ]])
+
+vim.api.nvim_create_autocmd("TextYankPost", {
+  callback = function()
+    print(vim.inspect(vim.v.event))
+  end,
+})
+
+--vim.cmd([[ autocmd TextYankPost * lua require('osc52').copy_visual() ]])
+vim.api.nvim_create_autocmd("TextYankPost", {
+  callback = function()
+    if vim.v.event.operator ~= "y" then return end
+
+    local ok, osc52 = pcall(require, "osc52")
+    if not ok then return end
+
+    -- regcontents works even when registers are bypassed
+    local text = table.concat(vim.v.event.regcontents, "\n")
+    osc52.copy(text)
+  end,
+})
 
 -------------------------
 -- Press space + c to switch colors
