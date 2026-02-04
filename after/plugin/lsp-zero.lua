@@ -1,57 +1,56 @@
 ----------------------
--- LSP 
+-- LSP (lsp-zero)
 ----------------------
-
--- https://lsp-zero.netlify.app/v3.x/guide/what-to-do-when-lsp-doesnt-start.html
-
 local lsp = require("lsp-zero").preset("recommended")
+local lspconfig = require("lspconfig")
+local util = require("lspconfig.util")
 
 ----------------------
--- HELM-LS 
-----------------------
-require('lspconfig').helm_ls.setup {
-settings = {
-  ['helm-ls'] = {
-    yamlls = {
-      path = "yaml-language-server",
-    }
-  }
-}
-}
-
-----------------------
--- MASON 
+-- MASON
 ----------------------
 require("mason").setup()
 require("mason-lspconfig").setup({
-  ensure_installed = { "lua_ls" },
+  ensure_installed = { "lua_ls", "yamlls", "helm_ls" },
   handlers = {
     function(server_name)
-      require("lspconfig")[server_name].setup({})
+      -- Don't let the generic handler clobber our custom setups
+      if server_name == "yamlls" or server_name == "helm_ls" then
+        return
+      end
+      lspconfig[server_name].setup({})
     end,
 
     lua_ls = function()
-      require("lspconfig").lua_ls.setup({
+      lspconfig.lua_ls.setup({
         settings = {
-          Lua = {
-            diagnostics = { globals = { "vim" } },
-          },
+          Lua = { diagnostics = { globals = { "vim" } } },
         },
       })
     end,
   },
 })
 
-lsp.setup()
+----------------------
+-- HELM-LS
+----------------------
+lspconfig.helm_ls.setup({
+  settings = {
+    ["helm-ls"] = {
+      yamlls = { path = "yaml-language-server" },
+    },
+  },
+})
 
---------------------------
--- YAML
---------------------------
-require('lspconfig').yamlls.setup {
+----------------------
+-- YAML (ONE setup only)
+----------------------
+lspconfig.yamlls.setup({
+  root_dir = util.root_pattern(".git", "Chart.yaml", "kustomization.yaml", "kustomization.yml"),
+  single_file_support = true,
   settings = {
     yaml = {
       schemas = {
-        kubernetes = "*.yaml","*yml",
+        kubernetes = { "*.yaml", "*.yml" },
         ["http://json.schemastore.org/github-workflow"] = ".github/workflows/*",
         ["http://json.schemastore.org/github-action"] = ".github/action.{yml,yaml}",
         ["http://json.schemastore.org/ansible-stable-2.9"] = "roles/tasks/*.{yml,yaml}",
@@ -66,9 +65,10 @@ require('lspconfig').yamlls.setup {
         ["https://raw.githubusercontent.com/argoproj/argo-workflows/master/api/jsonschema/schema.json"] = "*flow*.{yml,yaml}",
       },
     },
-  }
-}
+  },
+})
 
-require('lspconfig').yamlls.setup{}
-
+----------------------
+-- Finish
+----------------------
 lsp.setup()
