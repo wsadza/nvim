@@ -30,6 +30,36 @@ require("mason-lspconfig").setup({
   },
 })
 
+lspconfig.helm_ls.setup({
+  root_dir = util.root_pattern("Chart.yaml", "helmfile.yaml", ".git"),
+  filetypes = { "helm", "yaml" }, -- optional: allow attaching on yaml too
+  settings = {
+    ["helm-ls"] = {
+      yamlls = { path = "yaml-language-server" },
+    },
+  },
+})
+
+--lspconfig.helm_ls.setup({
+--  root_dir = util.root_pattern("Chart.yaml", "helmfile.yaml", ".git"),
+--})
+
+--require("lspconfig").yamlls.setup({
+--  settings = {
+--    yaml = {
+--      format = { enable = true },
+--      validate = true,
+--    },
+--  },
+--  -- disable yamlls for gotmpl buffers
+--  on_attach = function(client, bufnr)
+--    local name = vim.api.nvim_buf_get_name(bufnr)
+--    if name:match("%.gotmpl$") then
+--      vim.lsp.buf_detach_client(bufnr, client.id)
+--    end
+--  end,
+--})
+
 ----------------------
 -- HELM-LS
 ----------------------
